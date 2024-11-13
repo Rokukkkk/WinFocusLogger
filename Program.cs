@@ -16,7 +16,7 @@ public static partial class Program
     {
         uint lastActiveProcId = 0;
 
-        Console.WriteLine("{0,-10} {1,-8} {2,-20} {3,-40}\n", "Name", "PID", "Date", "Location");
+        Console.WriteLine("{0,-25} {1,-10} {2,-20} {3,-0}\n", "Name", "PID", "Date", "Location");
         while (true)
         {
             Thread.Sleep(100);
@@ -61,7 +61,7 @@ public static partial class Program
 
             if (activeProcId == lastActiveProcId || activeProcId == 0) continue;
             var date = DateTime.Now.ToString("yy-MMM-dd HH:mm:ss");
-            Console.WriteLine("{0,-10} {1,-8} {2,-20} {3,-40}", programName, activeProcId, date, program);
+            Console.WriteLine("{0,-25} {1,-10} {2,-20} {3,-0}", programName, activeProcId, date, program);
 
             lastActiveProcId = activeProcId;
         }
