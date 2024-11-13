@@ -71,7 +71,7 @@ public static class Program
             if (activeProcId == lastActiveProcId) continue;
             var date = DateTime.Now.ToString("dd MMM HH:mm:ss");
             Console.WriteLine(activeProcId == 0
-                ? $"No foreground application | {date}"
+                ? $"{date} \n No foreground application"
                 : $"PID:{activeProcId}\t{date} \n {program}");
 
             lastActiveProcId = activeProcId;
