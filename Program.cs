@@ -1,45 +1,33 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace WinFocusLogger;
 
-public static class Program
+public static partial class Program
 {
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
+    [LibraryImport("user32.dll")]
+    private static partial IntPtr GetForegroundWindow();
 
-    [DllImport("user32.dll")]
-    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
-
-    [DllImport("psapi.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    private static extern bool
-        GetModuleFileNameEx(IntPtr hProcess, IntPtr hModule, StringBuilder lpBaseName, int nSize);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool CloseHandle(IntPtr hObject);
-
-    private const uint ProcessQueryInformation = 0x400;
-    private const uint ProcessVmRead = 0x10;
+    [LibraryImport("user32.dll")]
+    private static partial uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
     public static void Main()
     {
         uint lastActiveProcId = 0;
 
-        Console.OutputEncoding = Encoding.Unicode;
-
+        Console.WriteLine("{0,-10} {1,-8} {2,-20} {3,-40}\n", "Name", "PID", "Date", "Location");
         while (true)
         {
             Thread.Sleep(100);
             uint activeProcId = 0;
-            var program = new StringBuilder(260);
+            var program = string.Empty;
+            var programName = string.Empty;
 
             var hWnd = GetForegroundWindow();
             if (hWnd != IntPtr.Zero)
             {
-                GetWindowThreadProcessId(hWnd, out activeProcId);
+                if (GetWindowThreadProcessId(hWnd, out activeProcId) == 0) continue;
 
                 if (activeProcId == 0)
                 {
@@ -47,29 +35,33 @@ public static class Program
                     continue;
                 }
 
-                var hProc = OpenProcess(ProcessQueryInformation | ProcessVmRead, false, activeProcId);
-                if (hProc == IntPtr.Zero)
+                Process hProc;
+                try
                 {
-                    Console.WriteLine("OpenProcess had error " + Marshal.GetLastWin32Error());
+                    hProc = Process.GetProcessById((int)activeProcId);
+                }
+                catch (Win32Exception e)
+                {
+                    Console.WriteLine("GetProcessByID had error " + e.NativeErrorCode);
                     continue;
                 }
 
-                var rc = GetModuleFileNameEx(hProc, IntPtr.Zero, program, program.Capacity);
-                if (rc == false)
+                try
                 {
-                    Console.WriteLine("GetModuleFileNameEx had error " + Marshal.GetLastWin32Error());
-                    CloseHandle(hProc);
+                    if (hProc.MainModule != null) program = hProc.MainModule.FileName;
+                }
+                catch (Win32Exception e)
+                {
+                    Console.WriteLine("MainModule.FileName had error " + e.NativeErrorCode);
                     continue;
                 }
 
-                CloseHandle(hProc);
+                programName = hProc.ProcessName;
             }
 
-            if (activeProcId == lastActiveProcId) continue;
-            var date = DateTime.Now.ToString("dd MMM HH:mm:ss");
-            Console.WriteLine(activeProcId == 0
-                ? $"{date} \n No foreground application"
-                : $"PID:{activeProcId}\t{date} \n {program}");
+            if (activeProcId == lastActiveProcId || activeProcId == 0) continue;
+            var date = DateTime.Now.ToString("yy-MMM-dd HH:mm:ss");
+            Console.WriteLine("{0,-10} {1,-8} {2,-20} {3,-40}", programName, activeProcId, date, program);
 
             lastActiveProcId = activeProcId;
         }
