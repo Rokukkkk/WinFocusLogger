@@ -19,9 +19,6 @@ public static class Program
         GetModuleFileNameEx(IntPtr hProcess, IntPtr hModule, StringBuilder lpBaseName, int nSize);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern uint GetLastError();
-
-    [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool CloseHandle(IntPtr hObject);
 
     private const uint ProcessQueryInformation = 0x400;
@@ -46,26 +43,26 @@ public static class Program
 
                 if (activeProcId == 0)
                 {
-                    Console.WriteLine("GetWindowThreadProcessId had error " + GetLastError());
+                    Console.WriteLine("GetWindowThreadProcessId had error " + Marshal.GetLastWin32Error());
                     continue;
                 }
 
                 var hProc = OpenProcess(ProcessQueryInformation | ProcessVmRead, false, activeProcId);
-                if (hProc != IntPtr.Zero)
+                if (hProc == IntPtr.Zero)
                 {
-                    var success = GetModuleFileNameEx(hProc, IntPtr.Zero, program, program.Capacity);
-                    if (!success)
-                    {
-                        Console.WriteLine("GetModuleFileNameEx had error " + GetLastError());
-                    }
-
-                    CloseHandle(hProc);
-                }
-                else
-                {
-                    Console.WriteLine("OpenProcess had error " + GetLastError());
+                    Console.WriteLine("OpenProcess had error " + Marshal.GetLastWin32Error());
                     continue;
                 }
+
+                var rc = GetModuleFileNameEx(hProc, IntPtr.Zero, program, program.Capacity);
+                if (rc == false)
+                {
+                    Console.WriteLine("GetModuleFileNameEx had error " + Marshal.GetLastWin32Error());
+                    CloseHandle(hProc);
+                    continue;
+                }
+
+                CloseHandle(hProc);
             }
 
             if (activeProcId == lastActiveProcId) continue;

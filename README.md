@@ -9,3 +9,5 @@
 
 ### Possible usage:
 - Fullscreen game/program keep minimizing
+
+*Some of the programs on Win10/11 may require **run as administrator**, check if error code is 5*
