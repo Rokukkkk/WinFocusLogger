@@ -22,12 +22,6 @@ public static partial class Program
         var programName = new StringBuilder();
         var buffer = new StringBuilder();
 
-        uint activeProcId = 0;
-        var program = string.Empty;
-        var programName = string.Empty;
-
-        var buffer = new StringBuilder();
-
         Console.WriteLine("{0,-25} {1,-10} {2,-20} {3,-0}\n", "Name", "PID", "Date", "Location");
         while (true)
         {
